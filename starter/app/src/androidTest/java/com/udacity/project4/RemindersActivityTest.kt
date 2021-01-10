@@ -1,16 +1,13 @@
 package com.udacity.project4
 
 import android.app.Application
-import androidx.fragment.app.testing.launchFragment
-import androidx.test.InstrumentationRegistry.getTargetContext
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
-import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.*
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
@@ -21,10 +18,8 @@ import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
 import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
-import com.udacity.project4.locationreminders.savereminder.selectreminderlocation.SelectLocationFragment
 import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
-import com.udacity.project4.util.monitorFragment
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -40,10 +35,7 @@ import org.koin.test.get
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
-//END TO END test to black box test the app
 class RemindersActivityTest : AutoCloseKoinTest() {
-// Extended Koin Test - embed autoclose @after method to close Koin after every test
-
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
     private val dataBindingIdlingResource = DataBindingIdlingResource()
@@ -92,7 +84,7 @@ class RemindersActivityTest : AutoCloseKoinTest() {
     }
 
     @Test
-    fun setTitleAndDescription_NavigateToMap(){
+    fun setTitleAndDescription_NavigateToMap() {
 
         val activityScenario = launchActivity<RemindersActivity>()
         dataBindingIdlingResource.monitorActivity(activityScenario)
@@ -100,9 +92,11 @@ class RemindersActivityTest : AutoCloseKoinTest() {
         onView(withId(R.id.addReminderFAB)).perform(click())
         onView(withId(R.id.reminderTitle))
             .perform(typeText("TITLE1"), closeSoftKeyboard())
+        onView(withText("TITLE1")).check(matches(isDisplayed()))
 
         onView(withId(R.id.reminderDescription))
             .perform(typeText("DESCRIPTION1"), closeSoftKeyboard())
+        onView(withText("DESCRIPTION1")).check(matches(isDisplayed()))
 
         onView(withId(R.id.selectLocation)).perform(click())
         openActionBarOverflowOrOptionsMenu(getApplicationContext())
@@ -114,10 +108,12 @@ class RemindersActivityTest : AutoCloseKoinTest() {
         openActionBarOverflowOrOptionsMenu(getApplicationContext())
         onView(withText("Normal Map")).perform(click())
 
-/*        val device = UiDevice.getInstance(getInstrumentation())
-        device.click(52.50648406893113.toInt(), 13.443535038592412.toInt())
+        onView(withId(R.id.mapView)).perform(longClick())
         onView(withId(R.id.btnSavePoi)).perform(click())
-        onView(withId(R.id.saveReminder)).perform(click())*/
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withText("TITLE1")).check(matches(isDisplayed()))
+        onView(withText("DESCRIPTION1")).check(matches(isDisplayed()))
+        onView(withText(R.string.dropped_pin)).check(matches(isDisplayed()))
         activityScenario.close()
     }
 }

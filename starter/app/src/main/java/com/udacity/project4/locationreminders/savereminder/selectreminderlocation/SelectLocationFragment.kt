@@ -2,8 +2,10 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 
 import android.annotation.SuppressLint
+import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.annotation.RequiresApi
 import androidx.databinding.DataBindingUtil
@@ -16,6 +18,7 @@ import com.google.android.gms.maps.GoogleMap.*
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.udacity.project4.R
@@ -24,17 +27,17 @@ import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     //Use Koin to get the view model of the SaveReminder
-    override val _viewModel: SaveReminderViewModel  by inject()
+    override val _viewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
     private lateinit var map: GoogleMap
     private val markers = MutableLiveData<List<Marker>>()
     private val markersArray = arrayListOf<Marker>()
     private var isPermissionGranted: Boolean = true
+    private lateinit var poiMarker: Marker
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
@@ -103,19 +106,61 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private fun setPoiClick(map: GoogleMap) {
         map.setOnPoiClickListener { poi ->
-                if (markersArray.isNotEmpty()) {
-                    _viewModel.showSnackBar.value = "The total of POI have to be 1"
-                } else {
-                    _viewModel.selectedPOI.value = poi
+            _viewModel.selectedPOI.value?.let {
+                if (it.placeId == poi.placeId) {
+                    poiMarker.remove()
+                    markersArray.clear()
+                    markers.value = markersArray
+                    _viewModel.selectedPOI.value = null
                 }
+            }
+            if (markersArray.isNotEmpty()) {
+                _viewModel.showSnackBar.value = "The total of POI or location have to be 1"
+            } else {
+                _viewModel.selectedPOI.value = poi
+            }
         }
     }
 
-    private fun removeRepeatedPoi(map: GoogleMap) {
-        map.setOnInfoWindowClickListener { marker ->
-            marker.remove()
-            if (markersArray.isNotEmpty()) markersArray.remove(marker)
-            markers.value = markersArray
+    private fun setMarker(map: GoogleMap) {
+        map.setOnMapLongClickListener { latLong ->
+            if (markersArray.isNotEmpty()) {
+                _viewModel.showSnackBar.value = "The total of POI or location have to be 1"
+            } else {
+                _viewModel.selectedLocation.value = latLong
+            }
+        }
+    }
+
+    private fun removeMarker(map: GoogleMap) {
+        map.setOnMarkerClickListener {
+            if (markersArray.isNotEmpty()) {
+                clearMarkersAndResetLiveData()
+            }
+            true
+        }
+    }
+
+    private fun clearMarkersAndResetLiveData() {
+        map.clear()
+        markersArray.clear()
+        markers.value = markersArray
+        _viewModel.selectedLocation.value = null
+    }
+
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            val success = map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(),
+                    R.raw.map_style
+                )
+            )
+            if (!success) {
+                Log.e(javaClass.name, "Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.e(javaClass.name, "Can't find style. Error: ", e)
         }
     }
 
@@ -128,14 +173,15 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         LocationServices.getFusedLocationProviderClient(requireContext()).lastLocation.addOnSuccessListener {
             val homeLatLong = LatLng(it.latitude, it.longitude)
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLong, zomLevel))
-            map.addMarker(MarkerOptions().position(homeLatLong))
         }
         setPoiClick(map)
-        removeRepeatedPoi(map)
+        setMarker(map)
+        removeMarker(map)
+        setMapStyle(map)
 
         _viewModel.selectedPOI.observe(viewLifecycleOwner, { poi ->
             poi?.let {
-                val poiMarker = map.addMarker(
+                poiMarker = map.addMarker(
                     MarkerOptions()
                         .position(it.latLng)
                         .title(it.name)
@@ -143,6 +189,18 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 markersArray.add(poiMarker)
                 markers.value = markersArray
                 poiMarker.showInfoWindow()
+            }
+        })
+
+        _viewModel.selectedLocation.observe(viewLifecycleOwner, { latLong ->
+            latLong?.let {
+                poiMarker = map.addMarker(
+                    MarkerOptions()
+                        .position(it)
+                        .title(getString(R.string.dropped_pin))
+                )
+                markersArray.add(poiMarker)
+                markers.value = markersArray
             }
         })
     }

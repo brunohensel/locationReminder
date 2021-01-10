@@ -30,8 +30,7 @@ class RemindersDaoTest {
         databse = Room.inMemoryDatabaseBuilder(
             getApplicationContext(),
             RemindersDatabase::class.java
-        )
-            .build()
+        ).build()
     }
 
     @After

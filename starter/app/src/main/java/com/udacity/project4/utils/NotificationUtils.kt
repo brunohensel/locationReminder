@@ -26,7 +26,7 @@ fun sendNotification(context: Context, reminderDataItem: ReminderDataItem) {
         val channel = NotificationChannel(
             NOTIFICATION_CHANNEL_ID,
             name,
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_HIGH
         )
         notificationManager.createNotificationChannel(channel)
     }
@@ -46,6 +46,7 @@ fun sendNotification(context: Context, reminderDataItem: ReminderDataItem) {
         .setContentTitle(reminderDataItem.title)
         .setContentText(reminderDataItem.location)
         .setContentIntent(notificationPendingIntent)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setAutoCancel(true)
         .build()
 

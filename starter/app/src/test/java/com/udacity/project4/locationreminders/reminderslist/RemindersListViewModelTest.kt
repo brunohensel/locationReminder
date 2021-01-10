@@ -42,6 +42,7 @@ class RemindersListViewModelTest {
             ReminderDTO(
                 title = "Title1",
                 description = "Description",
+
                 location = "Berliner Innenstadt",
                 latitude = 52.514332,
                 longitude = 13.350254,
