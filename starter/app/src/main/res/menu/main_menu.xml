@@ -5,4 +5,8 @@
         android:id="@+id/logout"
         android:title="@string/logout"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/deleteAll"
+        android:title="@string/delete_all_reminders"
+        app:showAsAction="ifRoom"/>
 </menu>

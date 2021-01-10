@@ -1,8 +1,11 @@
 package com.udacity.project4.locationreminders.reminderslist
 
 import android.app.Application
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
+import com.udacity.project4.authentication.FirebaseUserLiveData
 import com.udacity.project4.base.BaseViewModel
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
@@ -14,7 +17,21 @@ class RemindersListViewModel(
     private val dataSource: ReminderDataSource
 ) : BaseViewModel(app) {
     // list that holds the reminder data to be displayed on the UI
-    val remindersList = MutableLiveData<List<ReminderDataItem>>()
+    private val _remindersList = MutableLiveData<List<ReminderDataItem>>()
+
+    val reminderList: LiveData<List<ReminderDataItem>> = _remindersList
+
+    enum class AuthenticationState {
+        AUTHENTICATED, UNAUTHENTICATED
+    }
+
+    val authenticationState = FirebaseUserLiveData().map { user ->
+        if (user != null) {
+            AuthenticationState.AUTHENTICATED
+        } else {
+            AuthenticationState.UNAUTHENTICATED
+        }
+    }
 
     /**
      * Get all the reminders from the DataSource and add them to the remindersList to be shown on the UI,
@@ -40,10 +57,10 @@ class RemindersListViewModel(
                             reminder.id
                         )
                     })
-                    remindersList.value = dataList
+                    _remindersList.value = dataList
                 }
                 is Result.Error ->
-                    showSnackBar.value = result.message
+                    showSnackBar.value = result.message ?: " Reminder not found!"
             }
 
             //check if no data has to be shown
@@ -55,6 +72,16 @@ class RemindersListViewModel(
      * Inform the user that there's not any data if the remindersList is empty
      */
     private fun invalidateShowNoData() {
-        showNoData.value = remindersList.value == null || remindersList.value!!.isEmpty()
+        showNoData.value = _remindersList.value == null || _remindersList.value!!.isEmpty()
+    }
+
+    fun deleteAll() {
+        showLoading.value = true
+        viewModelScope.launch {
+            dataSource.deleteAllReminders()
+            showLoading.postValue(false)
+            _remindersList.value = emptyList()
+            invalidateShowNoData()
+        }
     }
 }

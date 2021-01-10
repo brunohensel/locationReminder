@@ -1,15 +1,15 @@
 package com.udacity.project4.locationreminders
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.Navigation
+import com.firebase.ui.auth.AuthUI
 import com.udacity.project4.R
-import kotlinx.android.synthetic.main.activity_reminders.*
+import com.udacity.project4.authentication.AuthenticationActivity
+import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import org.koin.android.ext.android.inject
 
 /**
  * The RemindersActivity that holds the reminders fragments
@@ -19,16 +19,29 @@ class RemindersActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reminders)
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val intent = Intent(
+            this,
+            AuthenticationActivity::class.java
+        ).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        or Intent.FLAG_ACTIVITY_NEW_TASK
+            )
+        }
         when (item.itemId) {
-            android.R.id.home -> {
-                (nav_host_fragment as NavHostFragment).navController.popBackStack()
+            R.id.logout -> {
+                AuthUI.getInstance().signOut(this).addOnCompleteListener {
+                    if (it.isSuccessful) startActivity(intent)
+                }
                 return true
             }
         }
         return super.onOptionsItemSelected(item)
     }
+
+    override fun onSupportNavigateUp() =
+        Navigation.findNavController(this, R.id.nav_host_fragment).navigateUp()
 }

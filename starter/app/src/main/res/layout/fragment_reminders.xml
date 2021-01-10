@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-
         <variable
             name="viewModel"
             type="com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel" />
@@ -14,6 +13,7 @@
         android:id="@+id/refreshLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:refreshing= "@{viewModel.showLoading}"
         tools:context=".locationreminders.reminderslist.ReminderListFragment">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -25,7 +25,7 @@
                 android:id="@+id/reminderssRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:liveData="@{viewModel.remindersList}"
+                android:liveData="@{viewModel.reminderList}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
